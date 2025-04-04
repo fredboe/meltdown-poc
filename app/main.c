@@ -4,37 +4,42 @@
 #include <stdint.h>
 #include <string.h>
 
-void flush_reload_demo() {
+void flush_reload_demo(const char *secret) {
     FlushReload channel = fr_init();
-    fr_reset(&channel);
 
-    uint8_t secret = 42;
-    fr_leak(&channel, secret);
-    uint8_t guessed_secret = fr_get(&channel);
+    printf("The following secret was extracted from the transmission: ");
+    for (size_t i = 0; i < strlen(secret); i++) {
+        fr_reset(&channel);
 
-    printf("What was the guess after the leakage of %d? %d\n", secret, guessed_secret);
-    printf("The retrieval worked? %d\n", secret == guessed_secret);
+        fr_leak(&channel, secret[i]);
+        const uint8_t guessed_secret = fr_get(&channel);
 
+        printf("%c", guessed_secret);
+    }
+
+    printf("\n");
     fr_free(&channel);
 }
 
-void meltdown_demo() {
+void meltdown_demo(const char *secret) {
     MeltdownUS meltdown_attack = meltdown_init();
 
-    uint8_t secret = 42;
-    uint8_t read_secret = meltdown_read_any(&meltdown_attack, &secret);
+    printf("The following secret was extracted from memory: ");
+    for (size_t i = 0; i < strlen(secret); i++) {
+        const uint8_t read_secret = meltdown_read_any(&meltdown_attack, (const uint8_t *) secret);
+        printf("%c", read_secret);
+    }
 
-    printf("The result of the meltdown attack was %d and %d was expected.\n", secret, read_secret);
-
+    printf("\n");
     meltdown_free(&meltdown_attack);
 }
 
 int main(int argc, char *argv[]) {
-    if (argc > 1 && strcmp(argv[1], "flush+reload") == 0) {
-        flush_reload_demo();
-    } else if (argc > 1 && strcmp(argv[1], "meltdown") == 0) {
-        meltdown_demo();
+    if (argc > 2 && strcmp(argv[1], "flush+reload") == 0) {
+        flush_reload_demo(argv[2]);
+    } else if (argc > 2 && strcmp(argv[1], "meltdown") == 0) {
+        meltdown_demo(argv[2]);
     } else {
-        printf("Either input 'flush+reload' or 'meltdown' to see a demo.\n");
+        printf("First input either 'flush+reload' or 'meltdown' and then define the secret to transmit/extract.\n");
     }
 }
