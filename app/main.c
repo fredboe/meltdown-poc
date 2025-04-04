@@ -6,6 +6,7 @@
 
 void flush_reload_demo() {
     FlushReload channel = fr_init();
+    fr_reset(&channel);
 
     uint8_t secret = 42;
     fr_leak(&channel, secret);
