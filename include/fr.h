@@ -1,7 +1,3 @@
-//
-// Created by fredboe on 04.04.25.
-//
-
 #ifndef FR_H
 #define FR_H
 

@@ -1,11 +1,5 @@
-//
-// Created by fredboe on 04.04.25.
-//
-
 #ifndef MELTDOWN_H
 #define MELTDOWN_H
-
-#include <setjmp.h>
 
 #include "fr.h"
 
