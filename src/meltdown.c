@@ -13,7 +13,6 @@ MeltdownUS meltdown_init(void) {
 }
 
 void meltdown_free(MeltdownUS *meltdown) {
-    fr_reset(&meltdown->_channel);
     fr_free(&meltdown->_channel);
 }
 
