@@ -13,8 +13,8 @@ MeltdownUS meltdown_init(void) {
 }
 
 void meltdown_free(MeltdownUS *meltdown) {
-    fr_free(&meltdown->_channel);
     fr_reset(&meltdown->_channel);
+    fr_free(&meltdown->_channel);
 }
 
 void meltdown_read_if_flag_(const MeltdownUS *meltdown, uint8_t *exception_causer, const uint8_t *addr, int flag) {
@@ -42,6 +42,3 @@ uint8_t meltdown_read_any(const MeltdownUS *meltdown, const uint8_t *addr) {
 
     return fr_get(&meltdown->_channel);
 }
-
-
-
